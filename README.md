@@ -38,6 +38,4 @@ Open `http://localhost:5000`
 └── headphone.png    # Decorative overlay
 ```
 
-## License
 
-MIT
