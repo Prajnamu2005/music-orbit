@@ -86,8 +86,8 @@ function togglePlay() {
 
 function updatePlayButton() {
     playBtn.innerHTML = isPlaying
-        ? '<svg viewBox="0 0 24 24" fill="white"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>'
-        : '<svg viewBox="0 0 24 24" fill="white"><polygon points="6,4 20,12 6,20"/></svg>';
+        ? '<svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="6" y="4" width="4" height="16" rx="1" fill="#121218"/><rect x="14" y="4" width="4" height="16" rx="1" fill="#121218"/></svg>'
+        : '<svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polygon points="6,4 20,12 6,20" fill="#121218"/></svg>';
 }
 
 function showNowPlaying(track) {
