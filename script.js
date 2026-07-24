@@ -18,6 +18,7 @@ const searchToggle = document.getElementById('searchToggle');
 const searchOverlay = document.getElementById('searchOverlay');
 const searchInput = document.getElementById('searchInput');
 const searchClose = document.getElementById('searchClose');
+const modeToggle = document.getElementById('modeToggle');
 
 async function fetchSongs(endpoint = '/api/charts', params = {}) {
     const url = new URL(endpoint, window.location.origin);
@@ -85,9 +86,11 @@ function togglePlay() {
 }
 
 function updatePlayButton() {
+    const isDark = document.body.classList.contains('dark');
+    const iconColor = isDark ? '#121218' : '#ffffff';
     playBtn.innerHTML = isPlaying
-        ? '<svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="6" y="4" width="4" height="16" rx="1" fill="#121218"/><rect x="14" y="4" width="4" height="16" rx="1" fill="#121218"/></svg>'
-        : '<svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polygon points="6,4 20,12 6,20" fill="#121218"/></svg>';
+        ? '<svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="6" y="4" width="4" height="16" rx="1" fill="' + iconColor + '"/><rect x="14" y="4" width="4" height="16" rx="1" fill="' + iconColor + '"/></svg>'
+        : '<svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polygon points="6,4 20,12 6,20" fill="' + iconColor + '"/></svg>';
 }
 
 function showNowPlaying(track) {
@@ -159,7 +162,16 @@ searchInput.addEventListener('input', () => {
     clearTimeout(searchTimeout);
     const q = searchInput.value.trim();
     if (!q) {
-        loadCharts();
+loadCharts();
+
+// Mode toggle
+const savedMode = localStorage.getItem('aura-mode');
+if (savedMode === 'dark') document.body.classList.add('dark');
+
+modeToggle.addEventListener('click', () => {
+    document.body.classList.toggle('dark');
+    localStorage.setItem('aura-mode', document.body.classList.contains('dark') ? 'dark' : 'light');
+});
         return;
     }
     searchTimeout = setTimeout(async () => {
@@ -186,3 +198,11 @@ async function loadCharts() {
 }
 
 loadCharts();
+
+const savedMode = localStorage.getItem('aura-mode');
+if (savedMode === 'dark') document.body.classList.add('dark');
+
+modeToggle.addEventListener('click', () => {
+    document.body.classList.toggle('dark');
+    localStorage.setItem('aura-mode', document.body.classList.contains('dark') ? 'dark' : 'light');
+});
