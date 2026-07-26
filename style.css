@@ -7,6 +7,7 @@
     text-align: center;
     overflow: hidden;
     position: relative;
+    flex-shrink: 0;
 }
 .banner .slider{
     position: absolute;
@@ -92,7 +93,7 @@
 .banner .content h1{
     font-family: 'ICA Rubrik';
     text-align: center;
-    font-size: 16em;
+    font-size: 13em;
     line-height: 1em;
     color: #25283B;
     position: relative;
@@ -503,6 +504,187 @@ body.dark .now-playing{
     color: #fff;
 }
 
+/* Most Played Section */
+.most-played{
+    width: 100%;
+    padding: 0 60px 140px;
+    position: relative;
+    z-index: 3;
+}
+.section-title{
+    font-family: 'ICA Rubrik';
+    font-size: 5em;
+    text-align: center;
+    margin-bottom: 60px;
+    position: relative;
+    color: #25283B;
+    opacity: 0;
+    transform: translateY(50px);
+    transition: opacity 0.7s ease-out, transform 0.7s ease-out;
+}
+.section-title.visible{
+    opacity: 1;
+    transform: translateY(0);
+}
+.section-title::after{
+    content: attr(data-content);
+    position: absolute;
+    inset: 0 0 0 0;
+    -webkit-text-stroke: 1.5px #aaa;
+    color: transparent;
+}
+.mp-grid{
+    display: flex;
+    gap: 40px;
+    max-width: 1100px;
+    margin: 0 auto;
+    align-items: flex-start;
+    opacity: 0;
+    transform: translateY(50px);
+    transition: opacity 0.7s ease-out 0.15s, transform 0.7s ease-out 0.15s;
+}
+.mp-grid.visible{
+    opacity: 1;
+    transform: translateY(0);
+}
+.mp-list{
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+}
+.mp-item{
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+}
+.mp-item:hover{
+    transform: translateX(6px);
+}
+.mp-item-num{
+    font-family: 'ICA Rubrik';
+    font-size: 1.6em;
+    color: #bbb;
+    min-width: 36px;
+    text-align: center;
+}
+.mp-item-art{
+    width: 52px;
+    height: 52px;
+    border-radius: 8px;
+    object-fit: cover;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.mp-item-info{
+    min-width: 0;
+    flex: 1;
+}
+.mp-item-title{
+    font-family: Poppins, sans-serif;
+    font-size: 0.9em;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.mp-item-artist{
+    font-family: Poppins, sans-serif;
+    font-size: 0.75em;
+    color: #888;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.mp-item-dur{
+    font-family: Poppins, sans-serif;
+    font-size: 0.7em;
+    color: #aaa;
+    flex-shrink: 0;
+}
+.mp-featured{
+    flex: 0 0 380px;
+    position: relative;
+    border-radius: 20px;
+    overflow: hidden;
+    aspect-ratio: 1;
+}
+.mp-feat-art{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.mp-feat-info{
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 24px;
+    background: linear-gradient(transparent, rgba(0,0,0,0.85));
+}
+.mp-feat-label{
+    font-family: Poppins, sans-serif;
+    font-size: 0.65em;
+    font-weight: 600;
+    color: #1db954;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+.mp-feat-title{
+    font-family: Poppins, sans-serif;
+    font-size: 1.3em;
+    font-weight: 700;
+    color: #fff;
+    margin-top: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.mp-feat-artist{
+    font-family: Poppins, sans-serif;
+    font-size: 0.85em;
+    color: #ccc;
+    margin-top: 2px;
+}
+
+/* Light mode most-played */
+.mp-item{
+    background: rgba(0,0,0,0.03);
+}
+.mp-item:hover{
+    background: rgba(0,0,0,0.07);
+}
+.mp-item-num{
+    color: #ccc;
+}
+.mp-item-title{
+    color: #1a1a2e;
+}
+body.dark .mp-item{
+    background: rgba(255,255,255,0.04);
+}
+body.dark .mp-item:hover{
+    background: rgba(255,255,255,0.08);
+}
+body.dark .mp-item-num{
+    color: #555;
+}
+body.dark .mp-item-title{
+    color: #fff;
+}
+body.dark .section-title{
+    color: #e0e0e0;
+}
+body.dark .section-title::after{
+    -webkit-text-stroke: 1.5px #444;
+}
+
 @media screen and (max-width: 1023px) {
     .banner .slider{
         width: 140px;
@@ -522,6 +704,22 @@ body.dark .now-playing{
     }
     .np-progress-wrap{
         display: none;
+    }
+    .most-played{
+        padding: 60px 24px 140px;
+    }
+    .section-title{
+        font-size: 3em;
+    }
+    .mp-grid{
+        flex-direction: column-reverse;
+        gap: 32px;
+    }
+    .mp-featured{
+        flex: 0 0 auto;
+        width: 100%;
+        max-width: 400px;
+        margin: 0 auto;
     }
 }
 @media screen and (max-width: 767px) {
@@ -559,5 +757,19 @@ body.dark .now-playing{
     .np-play{
         width: 36px;
         height: 36px;
+    }
+    .most-played{
+        padding: 40px 16px 140px;
+    }
+    .section-title{
+        font-size: 2.2em;
+        margin-bottom: 36px;
+    }
+    .mp-item-art{
+        width: 44px;
+        height: 44px;
+    }
+    .mp-feat-title{
+        font-size: 1.1em;
     }
 }
