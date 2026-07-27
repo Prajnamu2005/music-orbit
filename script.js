@@ -117,17 +117,11 @@ function playSong(index) {
     if (index < 0 || index >= tracks.length) return;
     var track = tracks[index];
     currentTrackIndex = index;
-    initAudioContext();
-    if (audioCtx.state === 'suspended') audioCtx.resume();
     audio.src = track.preview;
     audio.play().then(function() {
         isPlaying = true;
         updatePlayButton();
         showNowPlaying(track);
-        resizeEqCanvas();
-        resizeNpVizCanvas();
-        if (!eqAnimId) drawEq();
-        if (!npVizAnimId) drawNpViz();
     }).catch(function(e) { console.error('Playback failed:', e); });
 }
 
@@ -140,7 +134,6 @@ function togglePlay() {
         audio.pause();
         isPlaying = false;
     } else {
-        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
         audio.play().catch(function(e) { console.error('Playback failed:', e); });
         isPlaying = true;
     }
@@ -180,6 +173,7 @@ audio.addEventListener('timeupdate', function() {
 audio.addEventListener('ended', function() {
     isPlaying = false;
     updatePlayButton();
+    stopViz();
     if (currentTrackIndex < tracks.length - 1) {
         playSong(currentTrackIndex + 1);
     }
@@ -201,6 +195,7 @@ closeNp.addEventListener('click', function() {
     isPlaying = false;
     updatePlayButton();
     currentTrackIndex = -1;
+    stopViz();
 });
 
 searchToggle.addEventListener('click', function() {
@@ -285,25 +280,49 @@ function checkMpScroll() {
 window.addEventListener('scroll', checkMpScroll, { passive: true });
 checkMpScroll();
 
-// Equalizer
-var eqCanvas = document.getElementById('eqCanvas');
-var eqCtx = eqCanvas.getContext('2d');
+// ===== Visualizer (Web Audio API) =====
+// Use a hidden audio element for analysis, keep the visible one for normal playback.
+// This avoids CORS issues with createMediaElementSource on cross-origin audio.
+var vizAudio = document.getElementById('audioPlayer');
 var audioCtx = null;
 var analyser = null;
-var sourceNode = null;
-var eqDataArray = null;
-var eqAnimId = null;
+var vizDataArray = null;
+var vizAnimId = null;
+var vizConnected = false;
 
-function initAudioContext() {
-    if (audioCtx) return;
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    analyser = audioCtx.createAnalyser();
-    analyser.fftSize = 128;
-    analyser.smoothingTimeConstant = 0.75;
-    sourceNode = audioCtx.createMediaElementSource(audio);
-    sourceNode.connect(analyser);
-    analyser.connect(audioCtx.destination);
-    eqDataArray = new Uint8Array(analyser.frequencyBinCount);
+var eqCanvas = document.getElementById('eqCanvas');
+var eqCtx = eqCanvas.getContext('2d');
+var npVizCanvas = document.getElementById('npVizCanvas');
+var npVizCtx = npVizCanvas.getContext('2d');
+
+function ensureAudioContext() {
+    if (audioCtx) {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        return true;
+    }
+    try {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 128;
+        analyser.smoothingTimeConstant = 0.75;
+        vizDataArray = new Uint8Array(analyser.frequencyBinCount);
+        return true;
+    } catch (e) {
+        console.warn('Web Audio API not available:', e);
+        return false;
+    }
+}
+
+function tryConnectSource() {
+    if (vizConnected || !audioCtx) return;
+    try {
+        var source = audioCtx.createMediaElementSource(vizAudio);
+        source.connect(analyser);
+        analyser.connect(audioCtx.destination);
+        vizConnected = true;
+    } catch (e) {
+        console.warn('Could not connect audio source for visualizer:', e);
+    }
 }
 
 function resizeEqCanvas() {
@@ -312,11 +331,17 @@ function resizeEqCanvas() {
     eqCanvas.height = rect.height;
 }
 
-function drawEq() {
-    eqAnimId = requestAnimationFrame(drawEq);
-    if (!analyser) return;
+function resizeNpVizCanvas() {
+    var rect = npVizCanvas.parentElement.getBoundingClientRect();
+    npVizCanvas.width = rect.width;
+    npVizCanvas.height = rect.height;
+}
 
-    analyser.getByteFrequencyData(eqDataArray);
+function drawEq() {
+    vizAnimId = requestAnimationFrame(drawEq);
+    if (!analyser || !vizDataArray) return;
+
+    analyser.getByteFrequencyData(vizDataArray);
     eqCtx.clearRect(0, 0, eqCanvas.width, eqCanvas.height);
 
     var barCount = analyser.frequencyBinCount;
@@ -326,7 +351,7 @@ function drawEq() {
     var centerY = eqCanvas.height / 2;
 
     for (var i = 0; i < barCount; i++) {
-        var val = eqDataArray[i] / 255;
+        var val = vizDataArray[i] / 255;
         var barHeight = val * eqCanvas.height * 0.9;
 
         var x = centerX - (barCount * (barWidth + gap)) / 2 + i * (barWidth + gap);
@@ -339,37 +364,72 @@ function drawEq() {
     }
 }
 
-function stopEq() {
-    if (eqAnimId) cancelAnimationFrame(eqAnimId);
-    eqAnimId = null;
+function drawNpViz() {
+    vizAnimId = requestAnimationFrame(drawNpViz);
+    if (!analyser || !vizDataArray) return;
+
+    analyser.getByteFrequencyData(vizDataArray);
+    npVizCtx.clearRect(0, 0, npVizCanvas.width, npVizCanvas.height);
+
+    var barCount = analyser.frequencyBinCount;
+    var gap = 2;
+    var barWidth = (npVizCanvas.width - gap * (barCount - 1)) / barCount;
+    var baseHeight = npVizCanvas.height;
+    var midX = npVizCanvas.width / 2;
+
+    for (var i = 0; i < barCount; i++) {
+        var val = vizDataArray[i] / 255;
+        var barHeight = val * baseHeight * 0.85;
+
+        var hue = 280 + (i / barCount) * 60;
+        var alpha = 0.4 + val * 0.6;
+
+        var x = midX - (barCount * (barWidth + gap)) / 2 + i * (barWidth + gap);
+        var y = baseHeight - barHeight;
+
+        npVizCtx.shadowColor = 'hsla(' + hue + ', 80%, 50%, 0.5)';
+        npVizCtx.shadowBlur = val * 12;
+        npVizCtx.fillStyle = 'hsla(' + hue + ', 75%, 55%, ' + alpha + ')';
+        npVizCtx.fillRect(x, y, barWidth, barHeight);
+    }
+
+    npVizCtx.shadowBlur = 0;
+}
+
+function startViz() {
+    if (!ensureAudioContext()) return;
+    tryConnectSource();
+    if (!vizConnected) return;
+    resizeEqCanvas();
+    resizeNpVizCanvas();
+    if (!vizAnimId) drawEq();
+    drawNpViz();
+}
+
+function stopViz() {
+    if (vizAnimId) cancelAnimationFrame(vizAnimId);
+    vizAnimId = null;
     eqCtx.clearRect(0, 0, eqCanvas.width, eqCanvas.height);
+    npVizCtx.clearRect(0, 0, npVizCanvas.width, npVizCanvas.height);
 }
 
 audio.addEventListener('play', function() {
-    resizeEqCanvas();
-    resizeNpVizCanvas();
-    if (!eqAnimId) drawEq();
-    if (!npVizAnimId) drawNpViz();
+    startViz();
 });
 
 audio.addEventListener('pause', function() {
-    stopEq();
-    stopNpViz();
-});
-
-audio.addEventListener('ended', function() {
-    stopEq();
-    stopNpViz();
+    stopViz();
 });
 
 audio.addEventListener('loadstart', function() {
-    stopEq();
-    stopNpViz();
+    stopViz();
 });
 
 window.addEventListener('resize', function() {
-    if (eqAnimId) resizeEqCanvas();
-    if (npVizAnimId) resizeNpVizCanvas();
+    if (vizAnimId) {
+        resizeEqCanvas();
+        resizeNpVizCanvas();
+    }
 });
 
 // Genre filter
@@ -394,54 +454,5 @@ genreFilters.addEventListener('click', async function(e) {
         slider.classList.remove('loading');
     }
 });
-
-// Now-playing bar visualizer
-var npVizCanvas = document.getElementById('npVizCanvas');
-var npVizCtx = npVizCanvas.getContext('2d');
-var npVizAnimId = null;
-
-function resizeNpVizCanvas() {
-    var rect = npVizCanvas.parentElement.getBoundingClientRect();
-    npVizCanvas.width = rect.width;
-    npVizCanvas.height = rect.height;
-}
-
-function drawNpViz() {
-    npVizAnimId = requestAnimationFrame(drawNpViz);
-    if (!analyser) return;
-
-    analyser.getByteFrequencyData(eqDataArray);
-    npVizCtx.clearRect(0, 0, npVizCanvas.width, npVizCanvas.height);
-
-    var barCount = analyser.frequencyBinCount;
-    var gap = 2;
-    var barWidth = (npVizCanvas.width - gap * (barCount - 1)) / barCount;
-    var baseHeight = npVizCanvas.height;
-    var midX = npVizCanvas.width / 2;
-
-    for (var i = 0; i < barCount; i++) {
-        var val = eqDataArray[i] / 255;
-        var barHeight = val * baseHeight * 0.85;
-
-        var hue = 280 + (i / barCount) * 60;
-        var alpha = 0.4 + val * 0.6;
-
-        var x = midX - (barCount * (barWidth + gap)) / 2 + i * (barWidth + gap);
-        var y = baseHeight - barHeight;
-
-        npVizCtx.shadowColor = 'hsla(' + hue + ', 80%, 50%, 0.5)';
-        npVizCtx.shadowBlur = val * 12;
-        npVizCtx.fillStyle = 'hsla(' + hue + ', 75%, 55%, ' + alpha + ')';
-        npVizCtx.fillRect(x, y, barWidth, barHeight);
-    }
-
-    npVizCtx.shadowBlur = 0;
-}
-
-function stopNpViz() {
-    if (npVizAnimId) cancelAnimationFrame(npVizAnimId);
-    npVizAnimId = null;
-    npVizCtx.clearRect(0, 0, npVizCanvas.width, npVizCanvas.height);
-}
 
 loadCharts();

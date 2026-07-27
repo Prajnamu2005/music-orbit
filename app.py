@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, jsonify, request, send_from_directory, Response, stream_with_context
 import requests
 import random
 
@@ -21,6 +21,8 @@ POPULAR_SEARCHES = [
 def normalize_track(item):
     artwork = item.get('artworkUrl100', '')
     artwork_big = artwork.replace('100x100', '600x600') if artwork else ''
+    preview_url = item.get('previewUrl', '')
+    proxied_preview = '/api/proxy?url=' + requests.utils.quote(preview_url) if preview_url else ''
     return {
         'id': item.get('trackId') or item.get('collectionId'),
         'title': item.get('trackName', ''),
@@ -31,7 +33,7 @@ def normalize_track(item):
             'cover_medium': artwork.replace('100x100', '300x300') if artwork else '',
             'cover_small': artwork,
         },
-        'preview': item.get('previewUrl', ''),
+        'preview': proxied_preview,
         'duration': item.get('trackTimeMillis', 0) // 1000,
         'link': item.get('trackViewUrl', ''),
     }
@@ -103,6 +105,31 @@ def genres():
         return jsonify({'data': results, 'total': len(results)})
     except requests.RequestException as e:
         return jsonify({'error': str(e)}), 502
+
+
+@app.route('/api/proxy')
+def proxy_audio():
+    url = request.args.get('url', '')
+    if not url or not url.startswith('http'):
+        return 'Missing url', 400
+    try:
+        r = requests.get(url, stream=True, timeout=10)
+        r.raise_for_status()
+        def generate():
+            for chunk in r.iter_content(chunk_size=4096):
+                if chunk:
+                    yield chunk
+        resp = Response(stream_with_context(generate()), status=r.status_code)
+        ct = r.headers.get('Content-Type', 'audio/x-m4a')
+        resp.headers['Content-Type'] = ct
+        cl = r.headers.get('Content-Length')
+        if cl:
+            resp.headers['Content-Length'] = cl
+        resp.headers['Accept-Ranges'] = 'bytes'
+        resp.headers['Access-Control-Allow-Origin'] = '*'
+        return resp
+    except requests.RequestException:
+        return 'Proxy error', 502
 
 
 if __name__ == '__main__':
