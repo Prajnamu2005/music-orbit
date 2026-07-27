@@ -117,12 +117,18 @@ function playSong(index) {
     if (index < 0 || index >= tracks.length) return;
     var track = tracks[index];
     currentTrackIndex = index;
+    initAudioContext();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
     audio.src = track.preview;
     audio.play().then(function() {
         isPlaying = true;
         updatePlayButton();
         showNowPlaying(track);
-    }).catch(function() {});
+        resizeEqCanvas();
+        resizeNpVizCanvas();
+        if (!eqAnimId) drawEq();
+        if (!npVizAnimId) drawNpViz();
+    }).catch(function(e) { console.error('Playback failed:', e); });
 }
 
 function togglePlay() {
@@ -134,7 +140,8 @@ function togglePlay() {
         audio.pause();
         isPlaying = false;
     } else {
-        audio.play().catch(function() {});
+        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+        audio.play().catch(function(e) { console.error('Playback failed:', e); });
         isPlaying = true;
     }
     updatePlayButton();
@@ -339,22 +346,25 @@ function stopEq() {
 }
 
 audio.addEventListener('play', function() {
-    initAudioContext();
-    if (audioCtx.state === 'suspended') audioCtx.resume();
     resizeEqCanvas();
+    resizeNpVizCanvas();
     if (!eqAnimId) drawEq();
+    if (!npVizAnimId) drawNpViz();
 });
 
 audio.addEventListener('pause', function() {
     stopEq();
+    stopNpViz();
 });
 
 audio.addEventListener('ended', function() {
     stopEq();
+    stopNpViz();
 });
 
 audio.addEventListener('loadstart', function() {
     stopEq();
+    stopNpViz();
 });
 
 window.addEventListener('resize', function() {
@@ -433,24 +443,5 @@ function stopNpViz() {
     npVizAnimId = null;
     npVizCtx.clearRect(0, 0, npVizCanvas.width, npVizCanvas.height);
 }
-
-audio.addEventListener('play', function() {
-    initAudioContext();
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-    resizeNpVizCanvas();
-    if (!npVizAnimId) drawNpViz();
-});
-
-audio.addEventListener('pause', function() {
-    stopNpViz();
-});
-
-audio.addEventListener('ended', function() {
-    stopNpViz();
-});
-
-audio.addEventListener('loadstart', function() {
-    stopNpViz();
-});
 
 loadCharts();
