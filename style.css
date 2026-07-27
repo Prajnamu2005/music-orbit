@@ -9,6 +9,58 @@
     position: relative;
     flex-shrink: 0;
 }
+
+/* Genre filters */
+.genre-filters{
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    display: flex;
+    gap: 8px;
+    padding: 6px;
+    background: rgba(0,0,0,0.06);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 30px;
+    border: 1px solid rgba(0,0,0,0.08);
+}
+.genre-btn{
+    font-family: Poppins, sans-serif;
+    font-size: 0.72em;
+    font-weight: 500;
+    padding: 6px 16px;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    background: transparent;
+    color: #666;
+    transition: all 0.25s;
+}
+.genre-btn:hover{
+    color: #333;
+    background: rgba(0,0,0,0.05);
+}
+.genre-btn.active{
+    background: #25283B;
+    color: #fff;
+}
+body.dark .genre-filters{
+    background: rgba(255,255,255,0.06);
+    border-color: rgba(255,255,255,0.1);
+}
+body.dark .genre-btn{
+    color: #888;
+}
+body.dark .genre-btn:hover{
+    color: #ccc;
+    background: rgba(255,255,255,0.06);
+}
+body.dark .genre-btn.active{
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+}
 .banner .slider{
     position: absolute;
     width: 200px;
@@ -396,7 +448,25 @@ body.dark .now-playing{
 .now-playing.active{
     transform: translateX(-50%) translateY(0);
 }
+.np-viz-canvas{
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 16px;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.4;
+    mask-image: linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.6) 50%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.6) 50%, transparent 100%);
+}
+body.dark .np-viz-canvas{
+    opacity: 0.55;
+}
 .np-inner{
+    position: relative;
+    z-index: 1;
     max-width: 1200px;
     margin: 0 auto;
     display: flex;
@@ -510,6 +580,7 @@ body.dark .now-playing{
     padding: 0 60px 140px;
     position: relative;
     z-index: 3;
+    margin-top: -15px;
 }
 .section-title{
     font-family: 'ICA Rubrik';
@@ -519,8 +590,8 @@ body.dark .now-playing{
     position: relative;
     color: #25283B;
     opacity: 0;
-    transform: translateY(50px);
-    transition: opacity 0.7s ease-out, transform 0.7s ease-out;
+    transform: translateY(80px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
 }
 .section-title.visible{
     opacity: 1;
@@ -540,8 +611,8 @@ body.dark .now-playing{
     margin: 0 auto;
     align-items: flex-start;
     opacity: 0;
-    transform: translateY(50px);
-    transition: opacity 0.7s ease-out 0.15s, transform 0.7s ease-out 0.15s;
+    transform: translateY(80px);
+    transition: opacity 0.6s ease-out 0.1s, transform 0.6s ease-out 0.1s;
 }
 .mp-grid.visible{
     opacity: 1;
@@ -614,11 +685,21 @@ body.dark .now-playing{
     overflow: hidden;
     aspect-ratio: 1;
 }
+.eq-canvas{
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 3;
+    pointer-events: none;
+}
 .mp-feat-art{
     width: 100%;
     height: 100%;
     object-fit: cover;
     display: block;
+    position: relative;
+    z-index: 1;
 }
 .mp-feat-info{
     position: absolute;
@@ -627,6 +708,7 @@ body.dark .now-playing{
     right: 0;
     padding: 24px;
     background: linear-gradient(transparent, rgba(0,0,0,0.85));
+    z-index: 4;
 }
 .mp-feat-label{
     font-family: Poppins, sans-serif;
@@ -661,10 +743,16 @@ body.dark .now-playing{
     background: rgba(0,0,0,0.07);
 }
 .mp-item-num{
-    color: #ccc;
+    color: #888;
 }
 .mp-item-title{
     color: #1a1a2e;
+}
+.mp-item-artist{
+    color: #555;
+}
+.mp-item-dur{
+    color: #666;
 }
 body.dark .mp-item{
     background: rgba(255,255,255,0.04);
@@ -683,6 +771,34 @@ body.dark .section-title{
 }
 body.dark .section-title::after{
     -webkit-text-stroke: 1.5px #444;
+}
+.mp-item-hidden{
+    display: none;
+}
+.mp-show-more{
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, transform 0.2s;
+    margin: 12px auto 0;
+    background: rgba(0,0,0,0.06);
+    color: #555;
+}
+.mp-show-more:hover{
+    background: rgba(0,0,0,0.1);
+    transform: scale(1.1);
+}
+body.dark .mp-show-more{
+    background: rgba(255,255,255,0.08);
+    color: #aaa;
+}
+body.dark .mp-show-more:hover{
+    background: rgba(255,255,255,0.14);
 }
 
 @media screen and (max-width: 1023px) {

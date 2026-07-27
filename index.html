@@ -68,6 +68,15 @@
     </div>
 
     <div class="banner">
+        <div class="genre-filters" id="genreFilters">
+            <button class="genre-btn active" data-genre="top">Top</button>
+            <button class="genre-btn" data-genre="pop">Pop</button>
+            <button class="genre-btn" data-genre="hip hop">Hip-Hop</button>
+            <button class="genre-btn" data-genre="electronic">Electronic</button>
+            <button class="genre-btn" data-genre="rock">Rock</button>
+            <button class="genre-btn" data-genre="r&b">R&B</button>
+            <button class="genre-btn" data-genre="latin">Latin</button>
+        </div>
         <div class="slider" id="slider" style="--quantity: 10"></div>
         <div class="content">
             <h1 data-content="MUSIC-ORBIT">
@@ -82,6 +91,7 @@
         <div class="mp-grid">
             <div class="mp-list" id="mpList"></div>
             <div class="mp-featured" id="mpFeatured">
+                <canvas class="eq-canvas" id="eqCanvas"></canvas>
                 <img class="mp-feat-art" id="mpFeatArt" src="" alt="">
                 <div class="mp-feat-info">
                     <span class="mp-feat-label">Top Track</span>
@@ -93,6 +103,7 @@
     </section>
 
     <div class="now-playing" id="nowPlaying">
+        <canvas class="np-viz-canvas" id="npVizCanvas"></canvas>
         <div class="np-inner">
             <img class="np-art" id="npAlbumArt" src="" alt="">
             <div class="np-info">

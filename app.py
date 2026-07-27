@@ -87,5 +87,23 @@ def search():
         return jsonify({'error': str(e)}), 502
 
 
+@app.route('/api/genres')
+def genres():
+    genre = request.args.get('genre', '', type=str)
+    limit = request.args.get('limit', 10, type=int)
+    if not genre:
+        return jsonify({'error': 'genre parameter is required'}), 400
+    try:
+        r = requests.get(f'{ITUNES_API}/search', params={
+            'term': genre + ' music', 'media': 'music', 'entity': 'song', 'limit': limit
+        }, timeout=10)
+        r.raise_for_status()
+        items = r.json().get('results', [])
+        results = [normalize_track(item) for item in items if item.get('previewUrl')]
+        return jsonify({'data': results, 'total': len(results)})
+    except requests.RequestException as e:
+        return jsonify({'error': str(e)}), 502
+
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

@@ -23,6 +23,7 @@ const mpList = document.getElementById('mpList');
 const mpFeatArt = document.getElementById('mpFeatArt');
 const mpFeatTitle = document.getElementById('mpFeatTitle');
 const mpFeatArtist = document.getElementById('mpFeatArtist');
+const genreFilters = document.getElementById('genreFilters');
 
 async function fetchSongs(endpoint, params) {
     const url = new URL(endpoint, window.location.origin);
@@ -71,9 +72,13 @@ function buildMostPlayed(songList) {
     mpFeatArtist.textContent = featured.artist.name;
     mpFeatArt.onclick = function() { playSong(0); };
 
+    var showCount = 5;
+    var allItems = [];
+
     songList.forEach(function(track, i) {
         var row = document.createElement('div');
         row.className = 'mp-item';
+        if (i >= showCount) row.classList.add('mp-item-hidden');
         row.addEventListener('click', function() { playSong(i); });
 
         row.innerHTML =
@@ -85,7 +90,27 @@ function buildMostPlayed(songList) {
             '</div>' +
             '<span class="mp-item-dur">' + formatTime(track.duration) + '</span>';
         mpList.appendChild(row);
+        allItems.push(row);
     });
+
+    if (songList.length > showCount) {
+        var btn = document.createElement('button');
+        btn.className = 'mp-show-more';
+        btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+        btn.addEventListener('click', function() {
+            var hidden = mpList.querySelectorAll('.mp-item-hidden');
+            if (hidden.length > 0) {
+                hidden.forEach(function(item) { item.classList.remove('mp-item-hidden'); });
+                btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>';
+            } else {
+                allItems.forEach(function(item, i) {
+                    if (i >= showCount) item.classList.add('mp-item-hidden');
+                });
+                btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+            }
+        });
+        mpList.appendChild(btn);
+    }
 }
 
 function playSong(index) {
@@ -232,19 +257,200 @@ modeToggle.addEventListener('click', function() {
 var mpSection = document.getElementById('mostPlayed');
 var mpTitle = mpSection.querySelector('.section-title');
 var mpGrid = mpSection.querySelector('.mp-grid');
+var mpRevealed = false;
 
-var scrollObserver = new IntersectionObserver(function(entries) {
-    entries.forEach(function(entry) {
-        if (entry.isIntersecting) {
+function checkMpScroll() {
+    var rect = mpSection.getBoundingClientRect();
+    var triggerPoint = window.innerHeight * 0.75;
+    if (rect.top < triggerPoint) {
+        if (!mpRevealed) {
+            mpRevealed = true;
             mpTitle.classList.add('visible');
             mpGrid.classList.add('visible');
-        } else {
-            mpTitle.classList.remove('visible');
-            mpGrid.classList.remove('visible');
         }
-    });
-}, { threshold: 0.05, rootMargin: '0px 0px -50px 0px' });
+    } else {
+        mpRevealed = false;
+        mpTitle.classList.remove('visible');
+        mpGrid.classList.remove('visible');
+    }
+}
 
-scrollObserver.observe(mpSection);
+window.addEventListener('scroll', checkMpScroll, { passive: true });
+checkMpScroll();
+
+// Equalizer
+var eqCanvas = document.getElementById('eqCanvas');
+var eqCtx = eqCanvas.getContext('2d');
+var audioCtx = null;
+var analyser = null;
+var sourceNode = null;
+var eqDataArray = null;
+var eqAnimId = null;
+
+function initAudioContext() {
+    if (audioCtx) return;
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 128;
+    analyser.smoothingTimeConstant = 0.75;
+    sourceNode = audioCtx.createMediaElementSource(audio);
+    sourceNode.connect(analyser);
+    analyser.connect(audioCtx.destination);
+    eqDataArray = new Uint8Array(analyser.frequencyBinCount);
+}
+
+function resizeEqCanvas() {
+    var rect = eqCanvas.parentElement.getBoundingClientRect();
+    eqCanvas.width = rect.width;
+    eqCanvas.height = rect.height;
+}
+
+function drawEq() {
+    eqAnimId = requestAnimationFrame(drawEq);
+    if (!analyser) return;
+
+    analyser.getByteFrequencyData(eqDataArray);
+    eqCtx.clearRect(0, 0, eqCanvas.width, eqCanvas.height);
+
+    var barCount = analyser.frequencyBinCount;
+    var gap = 3;
+    var barWidth = (eqCanvas.width - gap * (barCount - 1)) / barCount;
+    var centerX = eqCanvas.width / 2;
+    var centerY = eqCanvas.height / 2;
+
+    for (var i = 0; i < barCount; i++) {
+        var val = eqDataArray[i] / 255;
+        var barHeight = val * eqCanvas.height * 0.9;
+
+        var x = centerX - (barCount * (barWidth + gap)) / 2 + i * (barWidth + gap);
+        var y = centerY - barHeight / 2;
+
+        var hue = 140 + (i / barCount) * 60;
+        var alpha = 0.5 + val * 0.5;
+        eqCtx.fillStyle = 'hsla(' + hue + ', 80%, 55%, ' + alpha + ')';
+        eqCtx.fillRect(x, y, barWidth, barHeight);
+    }
+}
+
+function stopEq() {
+    if (eqAnimId) cancelAnimationFrame(eqAnimId);
+    eqAnimId = null;
+    eqCtx.clearRect(0, 0, eqCanvas.width, eqCanvas.height);
+}
+
+audio.addEventListener('play', function() {
+    initAudioContext();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    resizeEqCanvas();
+    if (!eqAnimId) drawEq();
+});
+
+audio.addEventListener('pause', function() {
+    stopEq();
+});
+
+audio.addEventListener('ended', function() {
+    stopEq();
+});
+
+audio.addEventListener('loadstart', function() {
+    stopEq();
+});
+
+window.addEventListener('resize', function() {
+    if (eqAnimId) resizeEqCanvas();
+    if (npVizAnimId) resizeNpVizCanvas();
+});
+
+// Genre filter
+genreFilters.addEventListener('click', async function(e) {
+    var btn = e.target.closest('.genre-btn');
+    if (!btn) return;
+    genreFilters.querySelectorAll('.genre-btn').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    var genre = btn.dataset.genre;
+    try {
+        slider.classList.add('loading');
+        if (genre === 'top') {
+            var songs = await fetchSongs('/api/charts', { limit: 10 });
+            buildCarousel(songs);
+        } else {
+            var songs = await fetchSongs('/api/genres', { genre: genre, limit: 10 });
+            buildCarousel(songs);
+        }
+    } catch (err) {
+        console.error('Genre filter failed:', err);
+    } finally {
+        slider.classList.remove('loading');
+    }
+});
+
+// Now-playing bar visualizer
+var npVizCanvas = document.getElementById('npVizCanvas');
+var npVizCtx = npVizCanvas.getContext('2d');
+var npVizAnimId = null;
+
+function resizeNpVizCanvas() {
+    var rect = npVizCanvas.parentElement.getBoundingClientRect();
+    npVizCanvas.width = rect.width;
+    npVizCanvas.height = rect.height;
+}
+
+function drawNpViz() {
+    npVizAnimId = requestAnimationFrame(drawNpViz);
+    if (!analyser) return;
+
+    analyser.getByteFrequencyData(eqDataArray);
+    npVizCtx.clearRect(0, 0, npVizCanvas.width, npVizCanvas.height);
+
+    var barCount = analyser.frequencyBinCount;
+    var gap = 2;
+    var barWidth = (npVizCanvas.width - gap * (barCount - 1)) / barCount;
+    var baseHeight = npVizCanvas.height;
+    var midX = npVizCanvas.width / 2;
+
+    for (var i = 0; i < barCount; i++) {
+        var val = eqDataArray[i] / 255;
+        var barHeight = val * baseHeight * 0.85;
+
+        var hue = 280 + (i / barCount) * 60;
+        var alpha = 0.4 + val * 0.6;
+
+        var x = midX - (barCount * (barWidth + gap)) / 2 + i * (barWidth + gap);
+        var y = baseHeight - barHeight;
+
+        npVizCtx.shadowColor = 'hsla(' + hue + ', 80%, 50%, 0.5)';
+        npVizCtx.shadowBlur = val * 12;
+        npVizCtx.fillStyle = 'hsla(' + hue + ', 75%, 55%, ' + alpha + ')';
+        npVizCtx.fillRect(x, y, barWidth, barHeight);
+    }
+
+    npVizCtx.shadowBlur = 0;
+}
+
+function stopNpViz() {
+    if (npVizAnimId) cancelAnimationFrame(npVizAnimId);
+    npVizAnimId = null;
+    npVizCtx.clearRect(0, 0, npVizCanvas.width, npVizCanvas.height);
+}
+
+audio.addEventListener('play', function() {
+    initAudioContext();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    resizeNpVizCanvas();
+    if (!npVizAnimId) drawNpViz();
+});
+
+audio.addEventListener('pause', function() {
+    stopNpViz();
+});
+
+audio.addEventListener('ended', function() {
+    stopNpViz();
+});
+
+audio.addEventListener('loadstart', function() {
+    stopNpViz();
+});
 
 loadCharts();
