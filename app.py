@@ -95,16 +95,30 @@ def genres():
     limit = request.args.get('limit', 10, type=int)
     if not genre:
         return jsonify({'error': 'genre parameter is required'}), 400
-    try:
-        r = requests.get(f'{ITUNES_API}/search', params={
-            'term': genre + ' music', 'media': 'music', 'entity': 'song', 'limit': limit
-        }, timeout=10)
-        r.raise_for_status()
-        items = r.json().get('results', [])
-        results = [normalize_track(item) for item in items if item.get('previewUrl')]
-        return jsonify({'data': results, 'total': len(results)})
-    except requests.RequestException as e:
-        return jsonify({'error': str(e)}), 502
+    terms = [genre, genre + ' music', genre + ' songs']
+    items = []
+    for term in terms:
+        try:
+            r = requests.get(f'{ITUNES_API}/search', params={
+                'term': term, 'media': 'music', 'entity': 'song', 'limit': limit * 4
+            }, timeout=10)
+            r.raise_for_status()
+            items.extend(r.json().get('results', []))
+        except requests.RequestException:
+            continue
+    # Dedupe by artist so each shelf shows different artists
+    seen_artists = set()
+    results = []
+    for item in items:
+        track = normalize_track(item)
+        artist = track['artist']['name'].lower()
+        if not track['preview'] or artist in seen_artists:
+            continue
+        seen_artists.add(artist)
+        results.append(track)
+        if len(results) >= limit:
+            break
+    return jsonify({'data': results, 'total': len(results)})
 
 
 @app.route('/api/proxy')

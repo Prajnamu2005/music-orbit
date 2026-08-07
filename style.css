@@ -426,6 +426,91 @@ body.dark .now-playing{
     color: #333;
 }
 
+/* Side Nav (vertical, left) */
+.side-nav{
+    position: fixed;
+    top: 50%;
+    left: 18px;
+    transform: translateY(-50%);
+    z-index: 140;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 20px 18px;
+    background: rgba(255,255,255,0.5);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 22px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+}
+.side-nav-item{
+    width: 44px;
+    height: 44px;
+    border: none;
+    border-radius: 14px;
+    background: transparent;
+    color: #555;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    transform-origin: left center;
+    will-change: transform;
+    transition: background 0.25s, color 0.25s;
+}
+.side-nav-item svg{
+    width: 20px;
+    height: 20px;
+}
+.side-nav-item:hover{
+    background: rgba(0,0,0,0.08);
+    color: #1db954;
+}
+.side-nav-item.active{
+    color: #1db954;
+    background: rgba(29,185,84,0.12);
+}
+.side-nav-label{
+    position: absolute;
+    left: 120%;
+    top: 50%;
+    transform: translateY(-50%) translateX(-6px);
+    font-family: Poppins, sans-serif;
+    font-size: 0.7em;
+    font-weight: 600;
+    color: #fff;
+    background: #25283B;
+    padding: 5px 10px;
+    border-radius: 8px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s, transform 0.25s;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+}
+.side-nav-item:hover .side-nav-label{
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+}
+body.dark .side-nav{
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(255,255,255,0.12);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+body.dark .side-nav-item{
+    color: #aaa;
+}
+body.dark .side-nav-item:hover{
+    background: rgba(255,255,255,0.12);
+    color: #1db954;
+}
+body.dark .side-nav-item.active{
+    color: #1db954;
+    background: rgba(29,185,84,0.18);
+}
+
 /* Now Playing bar */
 .now-playing{
     position: fixed;
@@ -577,14 +662,14 @@ body.dark .np-viz-canvas{
 /* Most Played Section */
 .most-played{
     width: 100%;
-    padding: 0 60px 140px;
+    padding: 0 60px 0;
     position: relative;
     z-index: 3;
     margin-top: -15px;
 }
 .section-title{
     font-family: 'ICA Rubrik';
-    font-size: 5em;
+    font-size: 3.2em;
     text-align: center;
     margin-bottom: 60px;
     position: relative;
@@ -801,6 +886,163 @@ body.dark .mp-show-more:hover{
     background: rgba(255,255,255,0.14);
 }
 
+/* Recommendations Section */
+.recommendations{
+    width: 100%;
+    padding: 15px 60px 140px;
+    position: relative;
+    z-index: 3;
+}
+.rec-shelves{
+    display: flex;
+    flex-direction: column;
+    gap: 44px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+.rec-shelf{
+    opacity: 0;
+    transform: translateY(60px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+.rec-shelf.visible{
+    opacity: 1;
+    transform: translateY(0);
+}
+.rec-shelf-hidden{
+    display: none;
+}
+.rec-more-btn{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    margin: 24px auto 0;
+    padding: 14px 28px;
+    font-family: Poppins, sans-serif;
+    font-size: 0.85em;
+    font-weight: 600;
+    color: #1db954;
+    background: rgba(0,0,0,0.04);
+    border: 1.5px solid rgba(29,185,84,0.35);
+    border-radius: 40px;
+    cursor: pointer;
+    transition: background 0.25s, transform 0.25s, border-color 0.25s;
+}
+.rec-more-btn:hover{
+    background: rgba(29,185,84,0.1);
+    border-color: #1db954;
+    transform: translateY(-2px);
+}
+.rec-more-arrow{
+    transition: transform 0.3s ease;
+}
+body.dark .rec-more-btn{
+    background: rgba(255,255,255,0.06);
+    border-color: rgba(29,185,84,0.4);
+}
+body.dark .rec-more-btn:hover{
+    background: rgba(29,185,84,0.15);
+}
+.rec-shelf-header{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    padding: 0 4px;
+}
+.rec-shelf-title{
+    font-family: 'ICA Rubrik', sans-serif;
+    font-size: 1.6em;
+    color: #25283B;
+}
+.rec-shelf-more{
+    font-family: Poppins, sans-serif;
+    font-size: 0.75em;
+    font-weight: 600;
+    color: #1db954;
+    cursor: pointer;
+    background: none;
+    border: none;
+    transition: opacity 0.2s;
+}
+.rec-shelf-more:hover{
+    opacity: 0.7;
+}
+.rec-row{
+    display: flex;
+    gap: 20px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 4px 4px 30px;
+    scroll-behavior: smooth;
+    scrollbar-width: thin;
+    scrollbar-color: #999 transparent;
+}
+.rec-row::-webkit-scrollbar{
+    height: 6px;
+}
+.rec-row::-webkit-scrollbar-thumb{
+    background: #999;
+    border-radius: 3px;
+}
+.rec-card{
+    flex: 0 0 auto;
+    width: 180px;
+    border-radius: 14px;
+    overflow: hidden;
+    cursor: pointer;
+    position: relative;
+    transition: transform 0.3s, box-shadow 0.3s;
+    background: rgba(0,0,0,0.03);
+}
+.rec-card:hover{
+    transform: translateY(-6px);
+    box-shadow: 0 12px 28px rgba(0,0,0,0.2);
+}
+.rec-card img{
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    display: block;
+}
+.rec-card-info{
+    padding: 10px 12px 12px;
+}
+.rec-card-title{
+    font-family: Poppins, sans-serif;
+    font-size: 0.8em;
+    font-weight: 600;
+    color: #1a1a2e;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.rec-card-artist{
+    font-family: Poppins, sans-serif;
+    font-size: 0.7em;
+    color: #888;
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+body.dark .rec-card{
+    background: rgba(255,255,255,0.04);
+}
+body.dark .rec-card:hover{
+    box-shadow: 0 12px 28px rgba(0,0,0,0.5);
+}
+body.dark .rec-card-title{
+    color: #fff;
+}
+body.dark .rec-card-artist{
+    color: #aaa;
+}
+body.dark .rec-shelf-title{
+    color: #e0e0e0;
+}
+
 @media screen and (max-width: 1023px) {
     .banner .slider{
         width: 140px;
@@ -822,10 +1064,13 @@ body.dark .mp-show-more:hover{
         display: none;
     }
     .most-played{
-        padding: 60px 24px 140px;
+        padding: 60px 24px 0;
+    }
+    .recommendations{
+        padding: 15px 24px 140px;
     }
     .section-title{
-        font-size: 3em;
+        font-size: 2.2em;
     }
     .mp-grid{
         flex-direction: column-reverse;
@@ -856,6 +1101,18 @@ body.dark .mp-show-more:hover{
         width: min(400px, 90vw);
         padding: 0 16px;
     }
+    .side-nav{
+        left: 8px;
+        gap: 6px;
+        padding: 14px 12px;
+    }
+    .side-nav-item{
+        width: 38px;
+        height: 38px;
+    }
+    .side-nav-label{
+        display: none;
+    }
     .np-inner{
         height: 64px;
         gap: 10px;
@@ -875,11 +1132,17 @@ body.dark .mp-show-more:hover{
         height: 36px;
     }
     .most-played{
-        padding: 40px 16px 140px;
+        padding: 40px 16px 0;
+    }
+    .recommendations{
+        padding: 15px 16px 140px;
     }
     .section-title{
-        font-size: 2.2em;
+        font-size: 1.7em;
         margin-bottom: 36px;
+    }
+    .rec-card{
+        width: 130px;
     }
     .mp-item-art{
         width: 44px;

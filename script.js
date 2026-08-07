@@ -115,8 +115,12 @@ function buildMostPlayed(songList) {
 
 function playSong(index) {
     if (index < 0 || index >= tracks.length) return;
-    var track = tracks[index];
-    currentTrackIndex = index;
+    playTrack(tracks[index], index);
+}
+
+function playTrack(track, index) {
+    if (!track || !track.preview) return;
+    currentTrackIndex = (typeof index === 'number') ? index : -1;
     audio.src = track.preview;
     audio.play().then(function() {
         isPlaying = true;
@@ -279,6 +283,130 @@ function checkMpScroll() {
 
 window.addEventListener('scroll', checkMpScroll, { passive: true });
 checkMpScroll();
+
+// ===== Recommendations (BROWSE & DISCOVER) =====
+var recShelves = document.getElementById('recShelves');
+var recRevealed = false;
+var recSection = document.getElementById('recommendations');
+var REC_INITIAL_VISIBLE = 2;
+
+var REC_CATEGORIES = [
+    { title: 'Top Charts', type: 'charts' },
+    { title: 'Pop', type: 'genre', genre: 'pop' },
+    { title: 'Hip-Hop', type: 'genre', genre: 'hip hop' },
+    { title: 'Electronic', type: 'genre', genre: 'electronic' },
+    { title: 'Rock', type: 'genre', genre: 'rock' },
+    { title: 'R&B', type: 'genre', genre: 'r&b' },
+    { title: 'Latin', type: 'genre', genre: 'latin' },
+    { title: 'Country', type: 'genre', genre: 'country' },
+    { title: 'Jazz', type: 'genre', genre: 'jazz' },
+    { title: 'Classical', type: 'genre', genre: 'classical' },
+    { title: 'Metal', type: 'genre', genre: 'metal' },
+    { title: 'K-Pop', type: 'genre', genre: 'k-pop' },
+    { title: 'Indie', type: 'genre', genre: 'indie' },
+    { title: 'Folk', type: 'genre', genre: 'folk' },
+    { title: 'Blues', type: 'genre', genre: 'blues' },
+    { title: 'Dance', type: 'genre', genre: 'dance' },
+];
+
+async function loadRecommendations() {
+    recShelves.innerHTML = '';
+    var loadedShelves = [];
+    await Promise.all(REC_CATEGORIES.map(async function(cat) {
+        try {
+            var songs = cat.type === 'charts'
+                ? await fetchSongs('/api/charts', { limit: 12 })
+                : await fetchSongs('/api/genres', { genre: cat.genre, limit: 12 });
+            if (songs.length) {
+                loadedShelves.push({ title: cat.title, songs: songs });
+            }
+        } catch (err) {
+            console.error('Failed to load shelf "' + cat.title + '":', err);
+        }
+    }));
+
+    loadedShelves.forEach(function(shelfData, i) {
+        var shelf = buildRecShelf(shelfData.title, shelfData.songs);
+        if (i >= REC_INITIAL_VISIBLE) shelf.classList.add('rec-shelf-hidden');
+        recShelves.appendChild(shelf);
+    });
+
+    if (loadedShelves.length > REC_INITIAL_VISIBLE) {
+        var moreBtn = document.createElement('button');
+        moreBtn.className = 'rec-more-btn';
+        moreBtn.id = 'recMoreBtn';
+        moreBtn.innerHTML =
+            '<span>Discover more</span>' +
+            '<svg class="rec-more-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+        moreBtn.addEventListener('click', function() {
+            var hidden = recShelves.querySelectorAll('.rec-shelf-hidden');
+            var expanded = moreBtn.classList.toggle('expanded');
+            hidden.forEach(function(s) {
+                s.classList.toggle('rec-shelf-hidden', !expanded);
+                if (expanded) s.classList.add('visible');
+            });
+            moreBtn.querySelector('.rec-more-arrow').style.transform = expanded ? 'rotate(180deg)' : '';
+        });
+        recShelves.appendChild(moreBtn);
+    }
+}
+
+function buildRecShelf(title, songList) {
+    var shelf = document.createElement('div');
+    shelf.className = 'rec-shelf';
+
+    var header = document.createElement('div');
+    header.className = 'rec-shelf-header';
+    header.innerHTML = '<span class="rec-shelf-title">' + title + '</span>' +
+        '<button class="rec-shelf-more">VIEW ALL</button>';
+
+    var row = document.createElement('div');
+    row.className = 'rec-row';
+
+    songList.forEach(function(track) {
+        var card = document.createElement('div');
+        card.className = 'rec-card';
+
+        var img = document.createElement('img');
+        img.src = track.album.cover_big;
+        img.alt = track.title + ' - ' + track.artist.name;
+        img.loading = 'lazy';
+
+        var info = document.createElement('div');
+        info.className = 'rec-card-info';
+        info.innerHTML = '<div class="rec-card-title">' + track.title + '</div><div class="rec-card-artist">' + track.artist.name + '</div>';
+
+        card.appendChild(img);
+        card.appendChild(info);
+        card.addEventListener('click', function() { playTrack(track); });
+        row.appendChild(card);
+    });
+
+    shelf.appendChild(header);
+    shelf.appendChild(row);
+    return shelf;
+}
+
+function checkRecScroll() {
+    var rect = recSection.getBoundingClientRect();
+    var triggerPoint = window.innerHeight * 0.75;
+    var shelves = recShelves.querySelectorAll('.rec-shelf:not(.rec-shelf-hidden)');
+    var title = recSection.querySelector('.section-title');
+    if (rect.top < triggerPoint) {
+        if (!recRevealed) {
+            recRevealed = true;
+            title.classList.add('visible');
+            shelves.forEach(function(s) { s.classList.add('visible'); });
+        }
+    } else {
+        recRevealed = false;
+        title.classList.remove('visible');
+        shelves.forEach(function(s) { s.classList.remove('visible'); });
+    }
+}
+
+window.addEventListener('scroll', checkRecScroll, { passive: true });
+loadRecommendations();
 
 // ===== Visualizer (Web Audio API) =====
 // Use a hidden audio element for analysis, keep the visible one for normal playback.
@@ -454,5 +582,73 @@ genreFilters.addEventListener('click', async function(e) {
         slider.classList.remove('loading');
     }
 });
+
+// ===== Side Nav (interactive magnification) =====
+function scrollToTarget(target) {
+    if (target === 'top') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+    }
+    if (target === 'bottom') {
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        return;
+    }
+    var el = document.getElementById(target);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+var sideNav = document.getElementById('sideNav');
+var sideNavItems = sideNav.querySelectorAll('.side-nav-item');
+
+sideNav.addEventListener('click', function(e) {
+    var btn = e.target.closest('.side-nav-item');
+    if (!btn) return;
+    scrollToTarget(btn.dataset.target);
+});
+
+sideNav.addEventListener('mousemove', function(e) {
+    var mouseY = e.clientY;
+    sideNavItems.forEach(function(item) {
+        var r = item.getBoundingClientRect();
+        var center = r.top + r.height / 2;
+        var dist = Math.abs(mouseY - center);
+        var range = 120;
+        var factor = Math.max(1, 1 + (1 - Math.min(dist, range) / range) * 0.5);
+        item.style.transform = 'scale(' + factor + ')';
+    });
+});
+
+sideNav.addEventListener('mouseleave', function() {
+    sideNavItems.forEach(function(item) {
+        item.style.transform = '';
+    });
+});
+
+// Active state for side nav based on scroll position
+function updateSideNavActive() {
+    var targets = ['mostPlayed', 'recommendations'];
+    var current = 'top';
+    targets.forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) {
+            var rect = el.getBoundingClientRect();
+            if (rect.top < window.innerHeight * 0.5) current = id;
+        }
+    });
+    if (window.scrollY + window.innerHeight >= document.body.scrollHeight - 10) current = 'bottom';
+    var map = {
+        'top': 'top',
+        'mostPlayed': 'mostPlayed',
+        'recommendations': 'browse',
+        'bottom': 'bottom'
+    };
+    var activeTarget = map[current] || 'top';
+    sideNav.querySelectorAll('.side-nav-item').forEach(function(navBtn) {
+        navBtn.classList.toggle('active', navBtn.dataset.target === activeTarget);
+    });
+}
+
+window.addEventListener('scroll', updateSideNavActive, { passive: true });
+updateSideNavActive();
 
 loadCharts();
