@@ -14,10 +14,10 @@ const npAlbumArt = document.getElementById('npAlbumArt');
 const npTitle = document.getElementById('npTitle');
 const npArtist = document.getElementById('npArtist');
 const closeNp = document.getElementById('closeNp');
-const searchToggle = document.getElementById('searchToggle');
 const searchOverlay = document.getElementById('searchOverlay');
 const searchInput = document.getElementById('searchInput');
 const searchClose = document.getElementById('searchClose');
+const sideNavSearch = document.getElementById('sideNavSearch');
 const modeToggle = document.getElementById('modeToggle');
 const mpList = document.getElementById('mpList');
 const mpFeatArt = document.getElementById('mpFeatArt');
@@ -202,7 +202,7 @@ closeNp.addEventListener('click', function() {
     stopViz();
 });
 
-searchToggle.addEventListener('click', function() {
+sideNavSearch.addEventListener('click', function() {
     searchOverlay.classList.add('active');
     searchInput.focus();
 });
@@ -338,7 +338,7 @@ async function loadRecommendations() {
         moreBtn.className = 'rec-more-btn';
         moreBtn.id = 'recMoreBtn';
         moreBtn.setAttribute('aria-label', 'Discover more genres');
-        moreBtn.innerHTML = '<svg class="rec-more-arrow" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+        moreBtn.innerHTML = '<svg class="rec-more-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
         moreBtn.addEventListener('click', function() {
             var hidden = recShelves.querySelectorAll('.rec-shelf-hidden');
             var batch = Array.prototype.slice.call(hidden, 0, 2);

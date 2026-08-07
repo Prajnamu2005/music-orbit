@@ -263,19 +263,6 @@ body.dark .mode-toggle:hover{
 body.dark .mode-toggle svg{
     color: #fff;
 }
-body.dark .search-toggle{
-    background: rgba(255,255,255,0.08);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255,255,255,0.12);
-    box-shadow: 0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06);
-}
-body.dark .search-toggle svg{
-    color: #fff;
-}
-body.dark .search-toggle:hover{
-    background: rgba(255,255,255,0.14);
-}
 body.dark .search-overlay{
     background: rgba(0,0,0,0.5);
 }
@@ -334,35 +321,6 @@ body.dark .now-playing{
 }
 
 /* Search toggle */
-.search-toggle{
-    position: fixed;
-    top: 24px;
-    right: 24px;
-    z-index: 100;
-    width: 48px;
-    height: 48px;
-    background: rgba(0,0,0,0.06);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: background 0.3s, transform 0.2s;
-    border: 1px solid rgba(0,0,0,0.08);
-}
-.search-toggle:hover{
-    background: rgba(0,0,0,0.12);
-    transform: scale(1.1);
-}
-.search-toggle svg{
-    width: 20px;
-    height: 20px;
-    color: #333;
-}
-
-/* Search overlay */
 .search-overlay{
     position: fixed;
     inset: 0;
@@ -915,35 +873,34 @@ body.dark .mp-show-more:hover{
 .rec-more-wrap{
     display: flex;
     justify-content: center;
-    margin: 28px 0 8px;
+    margin: 20px 0 8px;
 }
 .rec-more-btn{
-    width: 46px;
-    height: 46px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #1db954;
-    background: rgba(0,0,0,0.04);
-    border: 1.5px solid rgba(29,185,84,0.35);
-    border-radius: 50%;
-    cursor: pointer;
-    transition: background 0.25s, transform 0.25s, border-color 0.25s;
+    transition: background 0.2s, transform 0.2s;
+    background: rgba(0,0,0,0.06);
+    color: #555;
 }
 .rec-more-btn:hover{
-    background: rgba(29,185,84,0.1);
-    border-color: #1db954;
-    transform: translateY(-2px);
+    background: rgba(0,0,0,0.1);
+    transform: scale(1.1);
 }
 .rec-more-btn:active{
-    transform: scale(0.92);
+    transform: scale(0.95);
 }
 body.dark .rec-more-btn{
-    background: rgba(255,255,255,0.06);
-    border-color: rgba(29,185,84,0.4);
+    background: rgba(255,255,255,0.08);
+    color: #aaa;
 }
 body.dark .rec-more-btn:hover{
-    background: rgba(29,185,84,0.15);
+    background: rgba(255,255,255,0.14);
 }
 .rec-shelf-header{
     display: flex;
