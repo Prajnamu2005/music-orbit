@@ -600,6 +600,7 @@ function scrollToTarget(target) {
         window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
         return;
     }
+    if (target === 'browse') target = 'recommendations';
     var el = document.getElementById(target);
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -646,7 +647,7 @@ function updateSideNavActive() {
     var map = {
         'top': 'top',
         'mostPlayed': 'mostPlayed',
-        'recommendations': 'recommendations',
+        'recommendations': 'browse',
         'bottom': 'bottom'
     };
     var activeTarget = map[current] || 'top';
