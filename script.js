@@ -646,7 +646,7 @@ function updateSideNavActive() {
     var map = {
         'top': 'top',
         'mostPlayed': 'mostPlayed',
-        'recommendations': 'browse',
+        'recommendations': 'recommendations',
         'bottom': 'bottom'
     };
     var activeTarget = map[current] || 'top';
